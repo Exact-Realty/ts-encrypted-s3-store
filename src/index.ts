@@ -13,8 +13,14 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-import { AwsClient } from 'aws4fetch';
+import type { AwsClient } from 'aws4fetch';
 import { autobb, btoau } from './lib/base64url.js';
+
+const encryptionAlgorithm = {
+	['name']: 'AES-GCM',
+	['length']: 256,
+};
+const keyWrappingAlgorithm = { ['name']: 'AES-KW' };
 
 const encryptFile = async (
 	awsClient: AwsClient,
@@ -22,25 +28,52 @@ const encryptFile = async (
 	name: string,
 	data: string | BufferSource,
 	wrappingKey: CryptoKey,
+	userWrappedEncryptionKeyB64?: string,
 	requestInit?: RequestInit,
 ): Promise<[string, string]> => {
 	const iv = globalThis.crypto.getRandomValues(new Uint8Array(12));
 
-	const encryptionKey = await globalThis.crypto.subtle.generateKey(
-		{
-			['name']: 'AES-GCM',
-			['length']: 256,
-		},
-		true,
-		['encrypt'],
-	);
+	const [encryptionKey, wrappedEncryptionKeyB64] =
+		await (userWrappedEncryptionKeyB64
+			? async (): Promise<[CryptoKey, string]> => {
+					const wrappedEncryptionKey = autobb(
+						userWrappedEncryptionKeyB64,
+					);
 
-	const wrappedEncryptionKey = await globalThis.crypto.subtle.wrapKey(
-		'raw',
-		encryptionKey,
-		wrappingKey,
-		{ ['name']: 'AES-KW' },
-	);
+					const encryptionKey =
+						await globalThis.crypto.subtle.unwrapKey(
+							'raw',
+							wrappedEncryptionKey,
+							wrappingKey,
+							keyWrappingAlgorithm,
+							encryptionAlgorithm,
+							false,
+							['encrypt'],
+						);
+
+					return [encryptionKey, userWrappedEncryptionKeyB64];
+			  }
+			: async (): Promise<[CryptoKey, string]> => {
+					const encryptionKey =
+						await globalThis.crypto.subtle.generateKey(
+							encryptionAlgorithm,
+							true,
+							['encrypt'],
+						);
+
+					const wrappedEncryptionKey =
+						await globalThis.crypto.subtle.wrapKey(
+							'raw',
+							encryptionKey,
+							wrappingKey,
+							keyWrappingAlgorithm,
+						);
+
+					return [
+						encryptionKey,
+						btoau(new Uint8Array(wrappedEncryptionKey)),
+					];
+			  })();
 
 	const dataBuffer =
 		typeof data === 'string' || data instanceof String
@@ -48,7 +81,7 @@ const encryptFile = async (
 			: data;
 
 	const encryptedData = await globalThis.crypto.subtle.encrypt(
-		{ ['name']: 'AES-GCM', ['iv']: iv },
+		{ ['name']: encryptionAlgorithm['name'], ['iv']: iv },
 		encryptionKey,
 		dataBuffer,
 	);
@@ -66,10 +99,10 @@ const encryptFile = async (
 		throw new Error('Unexpected response code: ' + response.status);
 	}
 
-	return [btoau(new Uint8Array(wrappedEncryptionKey)), btoau(iv)];
+	return [wrappedEncryptionKeyB64, btoau(iv)];
 };
 
-const deleteFile = async (
+const deleteFile = (
 	awsClient: AwsClient,
 	baseUri: string,
 	name: string,
@@ -77,7 +110,7 @@ const deleteFile = async (
 ): Promise<Response> => {
 	return awsClient.fetch(`${baseUri}/${encodeURIComponent(name)}`, {
 		...requestInit,
-		['method']: 'GET',
+		['method']: 'DELETE',
 	});
 };
 
@@ -97,11 +130,8 @@ const decryptFile = async (
 		'raw',
 		wrappedDecryptionKey,
 		unwrappingKey,
-		{ ['name']: 'AES-KW' },
-		{
-			['name']: 'AES-GCM',
-			['length']: 256,
-		},
+		keyWrappingAlgorithm,
+		encryptionAlgorithm,
 		false,
 		['decrypt'],
 	);
@@ -119,7 +149,7 @@ const decryptFile = async (
 	}
 
 	const decryptedData = await globalThis.crypto.subtle.decrypt(
-		{ ['name']: 'AES-GCM', ['iv']: iv },
+		{ ['name']: encryptionAlgorithm['name'], ['iv']: iv },
 		decryptionKey,
 		await response.arrayBuffer(),
 	);
@@ -127,4 +157,21 @@ const decryptFile = async (
 	return decryptedData;
 };
 
-export { decryptFile, deleteFile, encryptFile };
+const generateWrappedKey = async (wrappingKey: CryptoKey): Promise<string> => {
+	const encryptionKey = await globalThis.crypto.subtle.generateKey(
+		encryptionAlgorithm,
+		true,
+		['encrypt'],
+	);
+
+	const wrappedEncryptionKey = await globalThis.crypto.subtle.wrapKey(
+		'raw',
+		encryptionKey,
+		wrappingKey,
+		keyWrappingAlgorithm,
+	);
+
+	return btoau(new Uint8Array(wrappedEncryptionKey));
+};
+
+export { decryptFile, deleteFile, encryptFile, generateWrappedKey };

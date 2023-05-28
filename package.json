@@ -1,6 +1,6 @@
 {
 	"name": "@exact-realty/encrypted-s3-store",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "Simple wrapper for aws4fetch to store encrypted files",
 	"main": "dist/index.js",
 	"module": "./dist/index.mjs",

@@ -1,6 +1,6 @@
 {
 	"name": "@exact-realty/encrypted-s3-store",
-	"version": "1.0.2",
+	"version": "1.0.3",
 	"description": "Simple wrapper for aws4fetch to store encrypted files",
 	"main": "dist/index.js",
 	"module": "./dist/index.mjs",
@@ -15,20 +15,20 @@
 		}
 	},
 	"devDependencies": {
-		"@types/mocha": "^10.0.1",
-		"@types/node": "^20.4.4",
-		"@typescript-eslint/eslint-plugin": "^6.2.0",
-		"@typescript-eslint/parser": "^6.2.0",
+		"@types/mocha": "^10.0.2",
+		"@types/node": "^20.8.2",
+		"@typescript-eslint/eslint-plugin": "^6.7.4",
+		"@typescript-eslint/parser": "^6.7.4",
 		"aws4fetch": "^1.0.17",
-		"esbuild": "^0.18.16",
-		"eslint": "^8.45.0",
-		"eslint-config-prettier": "^8.8.0",
+		"esbuild": "^0.19.4",
+		"eslint": "^8.50.0",
+		"eslint-config-prettier": "^9.0.0",
 		"eslint-plugin-prettier": "^5.0.0",
 		"mocha": "^10.2.0",
 		"nyc": "^15.1.0",
-		"prettier": "^3.0.0",
+		"prettier": "^3.0.3",
 		"ts-node": "^10.9.1",
-		"typescript": "^5.1.6"
+		"typescript": "^5.2.2"
 	},
 	"peerDependencies": {
 		"aws4fetch": "^1.0.17"
@@ -45,7 +45,7 @@
 		"lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
 		"build": "tsc --emitDeclarationOnly --declarationMap --declaration && node esbuild.mjs",
 		"test": "nyc mocha",
-		"prepare": "npm run build",
+		"prepack": "npm run build",
 		"prepublishOnly": "npm test && npm run lint",
 		"preversion": "npm run lint",
 		"version": "npm run lint && git add -A src",

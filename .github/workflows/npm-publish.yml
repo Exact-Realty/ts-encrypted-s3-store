@@ -10,6 +10,9 @@ on:
 jobs:
   publish-npm:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     environment: CI
     steps:
       - uses: actions/checkout@v3
@@ -18,7 +21,7 @@ jobs:
           node-version: 19
           registry-url: https://registry.npmjs.org/
       - run: npm ci
-      - run: npm publish --access public
+      - run: npm publish --provenance --access public
         env:
           ACCESS_KEY_ID: ${{secrets.access_key_id}}
           BASE_URI: ${{secrets.base_uri}}

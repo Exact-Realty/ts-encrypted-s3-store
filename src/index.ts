@@ -16,6 +16,22 @@
 import type { AwsClient } from 'aws4fetch';
 import { autobb, btoau } from './lib/base64url.js';
 
+if (
+	typeof console !== 'undefined' &&
+	typeof console.info === 'function' &&
+	typeof globalThis === 'object' &&
+	!Object.prototype.hasOwnProperty.call(
+		globalThis,
+		'@exact-realty/encrypted-s3-store:slience-deprecation-notice',
+	)
+) {
+	console.info(
+		'[@exact-realty/encrypted-s3-store] This package is depecated and will receive no further updates.\r\n' +
+			'[@exact-realty/encrypted-s3-store] We suggest migrating to @exact-realty/rfc8188 instead.\r\n' +
+			'[@exact-realty/encrypted-s3-store] To supress this message, define a property called `@exact-realty/encrypted-s3-store:slience-deprecation-notice` in `globalThis` before importing this package.\r\n',
+	);
+}
+
 const encryptionAlgorithm = {
 	['name']: 'AES-GCM',
 	['length']: 256,

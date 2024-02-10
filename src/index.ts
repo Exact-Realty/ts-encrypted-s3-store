@@ -49,8 +49,8 @@ const encryptFile = async (
 ): Promise<[string, string]> => {
 	const iv = globalThis.crypto.getRandomValues(new Uint8Array(12));
 
-	const [encryptionKey, wrappedEncryptionKeyB64] =
-		await (userWrappedEncryptionKeyB64
+	const [encryptionKey, wrappedEncryptionKeyB64] = await (
+		userWrappedEncryptionKeyB64
 			? async (): Promise<[CryptoKey, string]> => {
 					const wrappedEncryptionKey = autobb(
 						userWrappedEncryptionKeyB64,
@@ -68,7 +68,7 @@ const encryptFile = async (
 						);
 
 					return [encryptionKey, userWrappedEncryptionKeyB64];
-			  }
+				}
 			: async (): Promise<[CryptoKey, string]> => {
 					const encryptionKey =
 						await globalThis.crypto.subtle.generateKey(
@@ -89,7 +89,8 @@ const encryptFile = async (
 						encryptionKey,
 						btoau(new Uint8Array(wrappedEncryptionKey)),
 					];
-			  })();
+				}
+	)();
 
 	const dataBuffer =
 		typeof data === 'string' || data instanceof String
